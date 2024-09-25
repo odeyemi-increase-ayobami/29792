@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Grid Game</title>
+<style>
+body {
+    background-color: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+
+#gameBox {
+    border: 2px solid white;
+    width: 90vw;
+    height: 90vw;
+    max-width: 500px;
+    max-height: 500px;
+    position: relative;
+}
+
+#grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    grid-template-rows: repeat(10, 1fr);
+    width: 100%;
+    height: 100%;
+}
+
+.tile {
+    border: 1px solid #333;
+}
+
+#controls {
+    position: absolute;
+    bottom: -70px;
+    width: 100%;
+    display: flex;
+    justify-content: space-around;
+}
+
+.colorBtn {
+    width: 40px;
+    height: 40px;
+    cursor: pointer;
+    border: none;
+}
+
+#moveCount, #newGame {
+    position: absolute;
+    top: -30px;
+}
+
+#moveCount {
+    right: 10px;
+}
+
+#newGame {
+    left: 10px;
+    cursor: pointer;
+}
+
+#message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2em;
+    cursor: pointer;
+    display: none;
+}
+</style>
+</head>
+<body>
+
+<div id="gameBox">
+    <div id="grid"></div>
+    <div id="controls"></div>
+    <div id="moveCount">Moves: 0</div>
+    <div id="newGame">New Game</div>
+    <div id="message"></div>
+</div>
+
+<script>
+const colors = ['#FF6633', '#FFB399', '#FF33FF', '#FFFF99', '#00B3E6'];
+let moves = 0, maxMoves = 30;
+let grid = [];
+
+function createGrid() {
+    grid = [];
+    const gridElement = document.getElementById('grid');
+    gridElement.innerHTML = '';
+    for(let i = 0; i < 100; i++) {
+        const tile = document.createElement('div');
+        tile.className = 'tile';
+        tile.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+        grid.push({element: tile, color: tile.style.backgroundColor});
+        gridElement.appendChild(tile);
+    }
+    updateColorButtons();
+}
+
+function updateColorButtons() {
+    const controls = document.getElementById('controls');
+    controls.innerHTML = '';
+    colors.forEach(color => {
+        const btn = document.createElement('button');
+        btn.className = 'colorBtn';
+        btn.style.backgroundColor = color;
+        btn.onclick = () => changeColor(color);
+        controls.appendChild(btn);
+    });
+}
+
+function changeColor(newColor) {
+    if(moves >= maxMoves) return;
+    const changedTiles = new Set();
+    function checkTile(index) {
+        if(index < 0 || index >= 100 || changedTiles.has(index)) return;
+        const tile = grid[index];
+        if(tile.color === grid[0].color) {
+            tile.color = newColor;
+            tile.element.style.backgroundColor = newColor;
+            changedTiles.add(index);
+            [index-1, index+1, index-10, index+10].forEach(checkTile); // Check adjacent tiles
+        }
+    }
+    checkTile(0);
+    moves++;
+    document.getElementById('moveCount').textContent = `Moves: ${moves}`;
+    checkWinCondition();
+}
+
+function checkWinCondition() {
+    const firstColor = grid[0].color;
+    if(grid.every(t => t.color === firstColor)) {
+        endGame(true);
+    } else if(moves >= maxMoves) {
+        endGame(false);
+    }
+}
+
+function endGame(win) {
+    const message = document.getElementById('message');
+    message.textContent = win ? 'You Win!' : 'Game Over';
+    message.style.display = 'block';
+    message.onclick = startNewGame;
+}
+
+function startNewGame() {
+    moves = 0;
+    document.getElementById('moveCount').textContent = `Moves: 0`;
+    document.getElementById('message').style.display = 'none';
+    createGrid();
+}
+
+document.getElementById('newGame').onclick = startNewGame;
+createGrid();
+</script>
+</body>
+</html>

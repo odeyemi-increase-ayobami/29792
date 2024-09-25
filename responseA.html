@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Color Grid Game</title>
+<script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+<style>
+body {
+    background-color: black;
+    color: white;
+    font-family: Arial, sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+#game-container {
+    border: 2px solid white;
+    padding: 20px;
+    width: 90%;
+    max-width: 500px;
+    text-align: center;
+}
+
+#grid {
+    display: grid;
+    grid-template-columns: repeat(10, 1fr);
+    gap: 2px;
+    margin-bottom: 20px;
+}
+
+.tile {
+    width: 100%;
+    padding-top: 100%; /* Makes the tile square */
+    cursor: pointer;
+}
+
+#color-selection {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.color-choice {
+    width: 40px;
+    height: 40px;
+    border: 1px solid white;
+    cursor: pointer;
+}
+
+#moves, #new-game {
+    position: absolute;
+    top: 10px;
+}
+
+#moves {
+    right: 10px;
+}
+
+#new-game {
+    left: 10px;
+    cursor: pointer;
+}
+
+#message {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 2em;
+    cursor: pointer;
+    display: none;
+}
+</style>
+</head>
+<body>
+
+<div id="game-container">
+    <div id="new-game">New Game</div>
+    <div id="moves">Moves: 0</div>
+    <div id="grid"></div>
+    <div id="color-selection"></div>
+    <div id="message"></div>
+</div>
+
+<script>
+$(document).ready(function() {
+    let moves = 0;
+    const maxMoves = 30;
+    const gridSize = 10;
+    let colors = [];
+    let grid = [];
+
+    function generateRandomColors() {
+        colors = [];
+        for (let i = 0; i < 5; i++) {
+            colors.push('#' + Math.floor(Math.random()*16777215).toString(16));
+        }
+    }
+
+    function setupGrid() {
+        grid = Array(gridSize).fill().map(() => Array(gridSize).fill(null));
+        let gridDiv = $('#grid');
+        gridDiv.empty();
+        for (let i = 0; i < gridSize * gridSize; i++) {
+            let color = colors[Math.floor(Math.random() * colors.length)];
+            grid[i % gridSize][Math.floor(i / gridSize)] = color;
+            gridDiv.append($('<div class="tile"></div>').css('background-color', color));
+        }
+    }
+
+    function floodFill(x, y, targetColor, replacementColor) {
+        if (targetColor === replacementColor) return;
+        if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
+        if (grid[x][y] !== targetColor) return;
+
+        grid[x][y] = replacementColor;
+        $('.tile').eq(y * gridSize + x).css('background-color', replacementColor);
+
+        floodFill(x+1, y, targetColor, replacementColor);
+        floodFill(x-1, y, targetColor, replacementColor);
+        floodFill(x, y+1, targetColor, replacementColor);
+        floodFill(x, y-1, targetColor, replacementColor);
+    }
+
+    function checkWin() {
+        const firstColor = grid[0][0];
+        return grid.every(row => row.every(color => color === firstColor));
+    }
+
+    function updateMoves() {
+        $('#moves').text('Moves: ' + moves);
+    }
+
+    function startNewGame() {
+        moves = 0;
+        updateMoves();
+        generateRandomColors();
+        setupGrid();
+        $('#color-selection').html(colors.map(color => 
+            `<div class="color-choice" style="background-color: ${color}"></div>`
+        ).join(''));
+        $('#message').hide();
+    }
+
+    $('#new-game').on('click', startNewGame);
+
+    $('#game-container').on('click', '.color-choice', function() {
+        if (moves < maxMoves) {
+            const newColor = $(this).css('background-color');
+            const oldColor = grid[0][0];
+            floodFill(0, 0, oldColor, newColor);
+            moves++;
+            updateMoves();
+            if (checkWin()) {
+                $('#message').text('You Win!').show().on('click', startNewGame);
+            } else if (moves >= maxMoves) {
+                $('#message').text('Game Over!').show().on('click', startNewGame);
+            }
+        }
+    });
+
+    startNewGame();
+});
+</script>
+
+</body>
+</html>
